@@ -10,6 +10,11 @@
   background-color: white;
   z-index: 1;
   width: 100%;
+  transition: transform 0.3s;
+}
+
+.product:hover {
+  transform: scale(1.04);
 }
 
 .product-rating {

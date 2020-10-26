@@ -1,13 +1,25 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "./Home.css";
 import Product from "./Product";
+import { slideImages } from "./slideImages";
+
 function Home() {
+  const [slideOnDisplay, setslideOnDisplay] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setslideOnDisplay(
+        (slideOnDisplay) => (slideOnDisplay + 1) % slideImages.length
+      );
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="home">
       <div className="home-container">
         <img
           className="home-img"
-          src="https://images-eu.ssl-images-amazon.com/images/G/02/digital/video/merch2016/Hero/Covid19/Generic/GWBleedingHero_ENG_COVIDUPDATE__XSite_1500x600_PV_en-GB._CB428684220_.jpg"
+          src={slideImages[slideOnDisplay]}
           alt=""
         ></img>
 

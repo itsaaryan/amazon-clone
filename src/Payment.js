@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import CheckoutProduct from "./CheckoutProduct";
 import { useStateValue } from "./StateProvider";
 import "./Payment.css";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import CurrencyFormat from "react-currency-format";
+import axios from "./axios";
 
 function Payment() {
   const [{ basket, user }, dispatch] = useStateValue();
@@ -12,16 +13,11 @@ function Payment() {
   const [disabled, setdisabled] = useState(true);
   const [successed, setsuccessed] = useState(false);
   const [processing, setprocessing] = useState("");
+  const [clientSecret, setclientSecret] = useState(true);
+  const history = useHistory();
 
   const stripe = useStripe();
   const elements = useElements();
-
-  const handleSubmit = () => {};
-
-  const handleChange = (e) => {
-    setdisabled(e.empty);
-    seterror(e.error ? e.error.message : "");
-  };
 
   const getBasketTotal = () => {
     var sum = 0;
@@ -29,6 +25,40 @@ function Payment() {
       sum += basket[i].price;
     }
     return sum;
+  };
+
+  useEffect(() => {
+    const getClientSecret = async () => {
+      const responce = await axios({
+        method: "post",
+        url: `/payments/create?total=${getBasketTotal() * 100}`,
+      });
+      setclientSecret(responce.data.clientSecret);
+    };
+    getClientSecret();
+  }, [basket]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setprocessing(true);
+    const payload = await stripe
+      .confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement),
+        },
+      })
+      .then(({ paymentIntent }) => {
+        setsuccessed(true);
+        seterror(null);
+        setprocessing(false);
+
+        history.replace("/order");
+      });
+  };
+
+  const handleChange = (e) => {
+    setdisabled(e.empty);
+    seterror(e.error ? e.error.message : "");
   };
 
   return (

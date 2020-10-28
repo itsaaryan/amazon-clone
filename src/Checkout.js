@@ -7,7 +7,7 @@ import FlipMove from "react-flip-move";
 
 function Checkout() {
   const [state, dispatch] = useStateValue();
-
+  console.log(state);
   return (
     <div className="checkout">
       <div className="checkout-left">

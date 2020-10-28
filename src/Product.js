@@ -3,6 +3,7 @@ import "./Product.css";
 import { useStateValue } from "./StateProvider";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { db } from "./firebase";
 
 function Product({ id, title, image, price, rating }) {
   const [state, dispatch] = useStateValue();
@@ -17,6 +18,7 @@ function Product({ id, title, image, price, rating }) {
       draggable: true,
       progress: undefined,
     });
+
     dispatch({
       type: "ADD_TO_BASKET",
       payload: {

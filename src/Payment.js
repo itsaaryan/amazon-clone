@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import CheckoutProduct from "./CheckoutProduct";
 import { useStateValue } from "./StateProvider";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./Payment.css";
 import { Link, useHistory } from "react-router-dom";
 import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import CurrencyFormat from "react-currency-format";
 import axios from "./axios";
+import { db } from "./firebase";
 
 function Payment() {
   const [{ basket, user }, dispatch] = useStateValue();
@@ -28,17 +31,29 @@ function Payment() {
   };
 
   useEffect(() => {
+    const dataToJSON = JSON.stringify({
+      address: user?.address,
+      name: user?.name,
+    });
     const getClientSecret = async () => {
-      const responce = await axios({
-        method: "post",
-        url: `/payments/create?total=${getBasketTotal() * 100}`,
-      });
+      const responce = await axios.post(
+        `/payments/create?total=${Math.floor(getBasketTotal() * 100)}`,
+        dataToJSON,
+        {
+          headers: {
+            "content-type": "application/json",
+          },
+        }
+      );
       setclientSecret(responce.data.clientSecret);
     };
     getClientSecret();
   }, [basket]);
 
+  console.log("secret======>", clientSecret);
+
   const handleSubmit = async (e) => {
+    console.log("called");
     e.preventDefault();
     setprocessing(true);
     const payload = await stripe
@@ -47,12 +62,36 @@ function Payment() {
           card: elements.getElement(CardElement),
         },
       })
-      .then(({ paymentIntent }) => {
-        setsuccessed(true);
-        seterror(null);
-        setprocessing(false);
-
-        history.replace("/order");
+      .then((result) => {
+        console.log("result=>>", result);
+        if (result.error) {
+          toast.error(result.error.message, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: 0,
+          });
+          seterror(result.error.message);
+          setprocessing(false);
+        } else {
+          db.collection("users")
+            .doc(user?.uid)
+            .collection("orders")
+            .doc(result.paymentIntent.id)
+            .set({
+              basket: basket,
+              amount: result.paymentIntent.amount,
+              created: result.paymentIntent.created,
+            });
+          setsuccessed(true);
+          seterror(null);
+          setprocessing(false);
+          dispatch({ type: "EMPTY_BASKET" });
+          history.replace("/orders");
+        }
       });
   };
 
@@ -71,8 +110,13 @@ function Payment() {
           </div>
           <div className="payment-address">
             <p>{user?.email}</p>
-            <p>123 React Lane</p>
-            <p>Los Angles,CA</p>
+            <p>{user?.address.line1}</p>
+            <p>
+              {user?.address.city},{user?.address.postal_code}
+            </p>
+            <p>{user?.address.state}</p>
+            <p>{user?.address.country}</p>
+            <strong>Contact Info: +{user?.phone}</strong>
           </div>
         </div>
         <div className="payment-section">
@@ -110,15 +154,28 @@ function Payment() {
                   thousandSeparator={true}
                   prefix={"$"}
                 />
-                <button disabled={processing || disabled || successed}>
+                <button
+                  type="submit"
+                  disabled={processing || disabled || successed}
+                >
                   <span>{processing ? <p>Processing</p> : "Buy Now"}</span>
                 </button>
               </div>
-              {error && <div>{error}</div>}
             </form>
           </div>
         </div>
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 }

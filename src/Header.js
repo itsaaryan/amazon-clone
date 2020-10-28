@@ -11,7 +11,9 @@ import { auth } from "./firebase";
 function Header() {
   const [state, dispatch] = useStateValue();
   const handleAuth = () => {
-    if (state.user) auth.signOut();
+    if (state.user) {
+      auth.signOut();
+    }
   };
   return (
     <div className="header">
@@ -25,22 +27,26 @@ function Header() {
         <input className="header-searchInput" type="text" />
         <SearchIcon className="header-searchIcon" />
       </div>
-      <div className="header-nav" onClick={handleAuth}>
+      <div className="header-nav">
         <Link to={!state.user && "/login"}>
-          <div className="header-option">
+          <div className="header-option" onClick={handleAuth}>
             <span className="header-optionLineOne">
-              Hello {state.user ? state.user.email : "Guest"}
+              Hello, {state.user ? state.user.name : "Guest"}
             </span>
             <span className="header-optionLineTwo">
               {state.user ? "Sign Out" : "Sign In"}
             </span>
           </div>
         </Link>
+        {state.user && (
+          <Link to="/orders">
+            <div className="header-option">
+              <span className="header-optionLineOne">Returns</span>
+              <span className="header-optionLineTwo">& Orders</span>
+            </div>
+          </Link>
+        )}
 
-        <div className="header-option">
-          <span className="header-optionLineOne">Returns</span>
-          <span className="header-optionLineTwo">& Orders</span>
-        </div>
         <div className="header-option">
           <span className="header-optionLineOne">Your</span>
           <span className="header-optionLineTwo">Prime</span>

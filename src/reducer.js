@@ -3,7 +3,7 @@ export const initialState = {
   user: null,
 };
 
-const reducer = (state = { initialState }, action) => {
+const reducer = (state, action) => {
   switch (action.type) {
     case "ADD_TO_BASKET":
       return {
@@ -30,6 +30,12 @@ const reducer = (state = { initialState }, action) => {
       return {
         ...state,
         user: action.payload,
+      };
+
+    case "EMPTY_BASKET":
+      return {
+        ...state,
+        basket: [],
       };
 
     default:
